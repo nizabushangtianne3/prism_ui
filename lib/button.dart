@@ -126,9 +126,13 @@ class _TonalButtonGroupState extends State<TonalButtonGroup>
           : _HoverMarkScope(mark: mark, child: mark.build(context, row)),
     );
     if (GooSurface.of(context)) {
-      return ElasticPress(child: GooPane(child: buttons));
+      return ElasticPress(
+        immediateRelease: true,
+        child: GooPane(child: buttons),
+      );
     }
     return ElasticPress(
+      immediateRelease: true,
       child: TonalButtonTheme.glassOf(context)
           ? Listener(
               onPointerDown: _handlePointerDown,
@@ -376,6 +380,7 @@ class TonalButton extends StatelessWidget {
     final label = Text(this.label);
     return ElasticPress(
       enabled: onPressed != null,
+      immediateRelease: true,
       child: DecoratedBox(
         decoration: ShapeDecoration(
           color: context.raisedSurfaceLevel.colorOf(context.colorScheme),

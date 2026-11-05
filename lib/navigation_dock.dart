@@ -426,6 +426,7 @@ class ElasticPress extends StatefulWidget {
   const ElasticPress({
     super.key,
     this.enabled = true,
+    this.immediateRelease = false,
     this.pullPastEdges = false,
     this.maxGrowth = _maxPressGrowth,
     this.maxPull,
@@ -434,6 +435,11 @@ class ElasticPress extends StatefulWidget {
   });
 
   final bool enabled;
+
+  /// Page actions opt out of waiting for a short tap to swell fully; spatial
+  /// controls such as the dock lens keep the deliberate full-rise timing.
+  final bool immediateRelease;
+
   final bool pullPastEdges;
   final double maxGrowth;
   final double? maxPull;
@@ -595,14 +601,19 @@ class _ElasticPressState extends State<ElasticPress>
     _pointer = null;
     _pullX.springTo(0, _pressSpring);
     _pullY.springTo(0, _pressSpring);
+    if (widget.immediateRelease) {
+      _releasing = false;
+      _lift.springTo(0, _pressSpring);
+      return;
+    }
     _releasing = true;
     _settle();
   }
 
-  // Release starts the return immediately; waiting for a short tap's swell to
-  // reach full lift made repeated clicks wait on the previous animation.
+  // A tap lets go before the swell has risen; callers that opt into immediate
+  // release skip this full-rise hold so repeated actions stay responsive.
   void _settle() {
-    if (!_releasing) {
+    if (!_releasing || _lift.value < _liftSnap) {
       return;
     }
     _releasing = false;
@@ -718,6 +729,7 @@ class ElasticButton extends StatelessWidget {
     const unlit = ButtonStyle(pressLook: PressLook.none);
     return ElasticPress(
       enabled: enabled,
+      immediateRelease: true,
       child: ButtonTheme.merge(
         data: const ButtonThemeData(
           icon: unlit,
