@@ -599,10 +599,10 @@ class _ElasticPressState extends State<ElasticPress>
     _settle();
   }
 
-  // A tap lets go before the swell has risen; it rises all the way first, as
-  // UIKit lifts the tab bar's lens all the way on a tap.
+  // Release starts the return immediately; waiting for a short tap's swell to
+  // reach full lift made repeated clicks wait on the previous animation.
   void _settle() {
-    if (!_releasing || _lift.value < _liftSnap) {
+    if (!_releasing) {
       return;
     }
     _releasing = false;
