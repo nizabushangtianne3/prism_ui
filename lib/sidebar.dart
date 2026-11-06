@@ -442,7 +442,7 @@ bool _fitsOneLine(
 
 /// The row lays out at the expanded width whatever the pane's current width,
 /// so the label is clipped rather than reflowed while the pane animates.
-class _DestinationRow extends StatelessWidget {
+class _DestinationRow extends StatefulWidget {
   const _DestinationRow({
     required this.destination,
     required this.selected,
@@ -460,28 +460,49 @@ class _DestinationRow extends StatelessWidget {
   final double labelOpacity;
 
   @override
+  State<_DestinationRow> createState() => _DestinationRowState();
+}
+
+class _DestinationRowState extends State<_DestinationRow> {
+  late Text _label = _buildLabel();
+
+  Text _buildLabel() => Text(
+    widget.destination.label,
+    maxLines: 1,
+    softWrap: false,
+    overflow: TextOverflow.ellipsis,
+    style: widget.style,
+  );
+
+  @override
+  void didUpdateWidget(_DestinationRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.destination.label != widget.destination.label ||
+        oldWidget.style != widget.style) {
+      _label = _buildLabel();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ClipRect(
       child: OverflowBox(
         alignment: AlignmentDirectional.centerStart,
-        minWidth: width,
-        maxWidth: width,
+        minWidth: widget.width,
+        maxWidth: widget.width,
         child: Row(
           children: [
-            SizedBox(width: iconInset),
-            AnimatedGlyph(glyph: destination.glyph, filled: selected),
+            SizedBox(width: widget.iconInset),
+            AnimatedGlyph(
+              glyph: widget.destination.glyph,
+              filled: widget.selected,
+            ),
             const SizedBox(width: _labelGap),
             Expanded(
               child: Opacity(
-                opacity: labelOpacity,
+                opacity: widget.labelOpacity,
                 alwaysIncludeSemantics: true,
-                child: Text(
-                  destination.label,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: style,
-                ),
+                child: _label,
               ),
             ),
             const SizedBox(width: _labelGap),

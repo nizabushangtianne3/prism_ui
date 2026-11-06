@@ -21,7 +21,11 @@ sealed class GlyphShape {
   final GlyphRole role;
   final bool solid;
 
-  Path get path;
+  static final _paths = Expando<Path>();
+
+  Path get path => _paths[this] ??= buildPath;
+
+  Path get buildPath;
 }
 
 class GlyphBox extends GlyphShape {
@@ -41,7 +45,7 @@ class GlyphBox extends GlyphShape {
   final double radius;
 
   @override
-  Path get path => Path()
+  Path get buildPath => Path()
     ..addRSuperellipse(
       RSuperellipse.fromLTRBR(
         left,
@@ -61,7 +65,7 @@ class GlyphCircle extends GlyphShape {
   final double radius;
 
   @override
-  Path get path =>
+  Path get buildPath =>
       Path()..addOval(Rect.fromCircle(center: Offset(x, y), radius: radius));
 }
 
@@ -74,7 +78,8 @@ class GlyphOval extends GlyphShape {
   final double bottom;
 
   @override
-  Path get path => Path()..addOval(Rect.fromLTRB(left, top, right, bottom));
+  Path get buildPath =>
+      Path()..addOval(Rect.fromLTRB(left, top, right, bottom));
 }
 
 class GlyphArc extends GlyphShape {
@@ -94,7 +99,7 @@ class GlyphArc extends GlyphShape {
   final double sweep;
 
   @override
-  Path get path => Path()
+  Path get buildPath => Path()
     ..addArc(
       Rect.fromCircle(center: Offset(x, y), radius: radius),
       start,
@@ -113,7 +118,7 @@ class GlyphLink extends GlyphShape {
   final double radius;
 
   @override
-  Path get path {
+  Path get buildPath {
     final delta = to - from;
     final inset = delta / delta.distance * (radius + Glyph.strokeWidth);
     final start = from + inset;
@@ -134,7 +139,7 @@ class GlyphPath extends GlyphShape {
   static final _parsed = Expando<Path>();
 
   @override
-  Path get path => _parsed[this] ??= _parse(data);
+  Path get buildPath => _parsed[this] ??= _parse(data);
 
   static Path _parse(String data) {
     final writer = _PathWriter();
@@ -200,7 +205,7 @@ class GlyphPolyline extends GlyphShape {
   }
 
   @override
-  Path get path {
+  Path get buildPath {
     final path = Path();
     final count = vertices.length;
     final first = closed ? _corner(0).$2 : vertices.first.offset;
