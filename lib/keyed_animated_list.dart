@@ -54,6 +54,9 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
   List<_Entry<T>> _entries = [];
   int _generation = 0;
 
+  final _indexed = <Object, int>{};
+  var _indexCursor = 0;
+
   // One controller drives every row entering or leaving in an update, so a
   // refresh that touches rows far off screen still runs a single ticker.
   late final AnimationController _transition =
@@ -102,10 +105,33 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
     for (final entry in _entries) {
       entry.phase = _Phase.settled;
     }
+    _resetIndex();
+  }
+
+  void _resetIndex() {
+    _indexed.clear();
+    _indexCursor = 0;
+  }
+
+  int? _indexOf(Object key) {
+    final held = _indexed[key];
+    if (held != null) {
+      return held;
+    }
+    while (_indexCursor < _entries.length) {
+      final entry = _entries[_indexCursor];
+      _indexed[entry.key] = _indexCursor;
+      _indexCursor++;
+      if (entry.key == key) {
+        return _indexCursor - 1;
+      }
+    }
+    return null;
   }
 
   void _replaceItems(List<T> items) {
     _transition.stop();
+    _resetIndex();
     setState(() {
       _entries = [for (final item in items) _Entry(widget.keyOf(item), item)];
       _generation++;
@@ -117,6 +143,7 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
       _transition.stop();
       _settle();
     }
+    _resetIndex();
     final oldByKey = {for (final entry in _entries) entry.key: entry};
     final newKeys = {for (final item in items) widget.keyOf(item)};
     final inserted = newKeys.where((key) => !oldByKey.containsKey(key));
@@ -185,9 +212,6 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
 
   @override
   Widget build(BuildContext context) {
-    final indexByKey = {
-      for (final (index, entry) in _entries.indexed) entry.key: index,
-    };
     return PrismListView(
       controller: widget.controller,
       padding: widget.padding,
@@ -196,7 +220,7 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
       estimatedItemExtent: widget.estimatedItemExtent,
       addRepaintBoundaries: false,
       findChildIndexCallback: (key) =>
-          key is ValueKey<Object> ? indexByKey[key.value] : null,
+          key is ValueKey<Object> ? _indexOf(key.value) : null,
       itemBuilder: _buildRow,
     );
   }
