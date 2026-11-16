@@ -144,6 +144,15 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
       _settle();
     }
     _resetIndex();
+    if (_sameOrder(items)) {
+      for (var index = 0; index < items.length; index++) {
+        _entries[index].item = items[index];
+      }
+      setState(() {
+        _generation++;
+      });
+      return;
+    }
     final oldByKey = {for (final entry in _entries) entry.key: entry};
     final newKeys = {for (final item in items) widget.keyOf(item)};
     final inserted = newKeys.where((key) => !oldByKey.containsKey(key));
@@ -188,6 +197,21 @@ class _KeyedAnimatedListState<T> extends State<KeyedAnimatedList<T>>
     if (next.any((entry) => entry.phase != _Phase.settled)) {
       _transition.forward(from: 0);
     }
+  }
+
+  /// Whether the list holds the same rows in the same order.
+  bool _sameOrder(List<T> items) {
+    if (_entries.length != items.length) {
+      return false;
+    }
+    for (var index = 0; index < items.length; index++) {
+      final entry = _entries[index];
+      if (entry.phase != _Phase.settled ||
+          entry.key != widget.keyOf(items[index])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Widget _buildRow(BuildContext context, int index) {
